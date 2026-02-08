@@ -1,27 +1,27 @@
 import React, { useMemo } from "react";
-import { Canvas, type ThreeElements } from "@react-three/fiber";
-import { TextureLoader, Vector3 } from "three";
-import { useLoader } from "@react-three/fiber";
+import { type ThreeElements } from "@react-three/fiber";
+import * as THREE from "three";
 
 type TorusProps = {
   widthSegments?: number;
   heightSegments?: number;
   R?: number; // major radius
   r?: number; // minor (tube) radius
-};
+} & ThreeElements["bufferGeometry"];
 
 export const Torus: React.FC<TorusProps> = ({
   widthSegments = 128,
   heightSegments = 64,
   R = 6 / 5,
   r = 1 / 3,
+  ...geomProps
 }: TorusProps) => {
-  const { positions, uvs, indices } = useMemo(() => {
+  const { positions, uvs, indices, normals } = useMemo(() => {
     const positions: number[] = [];
     const uvs: number[] = [];
     const indices: number[] = [];
 
-    // Build a grid in [0,1]x[0,1] (like a plane), then map to torus
+    // Build a grid in [0,1]x[0,1], then map to torus
     for (let iy = 0; iy <= heightSegments; iy++) {
       const v = iy / heightSegments; // [0,1]
       const angleV = v * Math.PI * 2; // tube angle
@@ -35,7 +35,7 @@ export const Torus: React.FC<TorusProps> = ({
         const z = r * Math.sin(angleV);
 
         positions.push(x, y, z);
-        uvs.push(u, v); // same as plane UVs
+        uvs.push(u, v);
       }
     }
 
@@ -53,16 +53,30 @@ export const Torus: React.FC<TorusProps> = ({
       }
     }
 
+    // Build a THREE.BufferGeometry to compute normals
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(positions, 3),
+    );
+    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals(); // crucial for lighting [web:13][web:24]
+
+    const normalAttr = geometry.getAttribute("normal") as THREE.BufferAttribute;
+
     return {
-      positions: new Float32Array(positions),
-      uvs: new Float32Array(uvs),
-      indices: new Uint32Array(indices),
+      positions: geometry.getAttribute("position").array as Float32Array,
+      uvs: geometry.getAttribute("uv").array as Float32Array,
+      indices: geometry.getIndex()!.array as Uint32Array,
+      normals: normalAttr.array as Float32Array,
     };
   }, [widthSegments, heightSegments, R, r]);
 
   return (
-    <bufferGeometry>
+    <bufferGeometry {...geomProps}>
       <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      <bufferAttribute attach="attributes-normal" args={[normals, 3]} />
       <bufferAttribute attach="attributes-uv" args={[uvs, 2]} />
       <bufferAttribute attach="index" args={[indices, 1]} />
     </bufferGeometry>

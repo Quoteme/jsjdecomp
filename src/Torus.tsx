@@ -7,6 +7,10 @@ type TorusProps = {
   heightSegments?: number;
   R?: number; // major radius
   r?: number; // minor (tube) radius
+  angleStartMeridian?: number; // in radians, default 0
+  angleLengthMeridian?: number; // in radians, default 2*PI
+  angleStartLongitude?: number; // in radians, default 0
+  angleLengthLongitude?: number; // in radians, default 2*PI
 } & ThreeElements["bufferGeometry"];
 
 export const Torus: React.FC<TorusProps> = ({
@@ -14,6 +18,10 @@ export const Torus: React.FC<TorusProps> = ({
   heightSegments = 64,
   R = 6 / 5,
   r = 1 / 3,
+  angleStartMeridian = 0,
+  angleLengthMeridian = Math.PI * 2,
+  angleStartLongitude = 0,
+  angleLengthLongitude = Math.PI * 2,
   ...geomProps
 }: TorusProps) => {
   const { positions, uvs, indices, normals } = useMemo(() => {
@@ -24,11 +32,11 @@ export const Torus: React.FC<TorusProps> = ({
     // Build a grid in [0,1]x[0,1], then map to torus
     for (let iy = 0; iy <= heightSegments; iy++) {
       const v = iy / heightSegments; // [0,1]
-      const angleV = v * Math.PI * 2; // tube angle
+      const angleV = v * angleLengthMeridian + angleStartMeridian; // tube angle
 
       for (let ix = 0; ix <= widthSegments; ix++) {
         const u = ix / widthSegments; // [0,1]
-        const angleU = u * Math.PI * 2; // around the torus
+        const angleU = u * angleLengthLongitude + angleStartLongitude; // around the torus
 
         const x = (R + r * Math.cos(angleV)) * Math.cos(angleU);
         const y = (R + r * Math.cos(angleV)) * Math.sin(-angleU);

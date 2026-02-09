@@ -36,7 +36,7 @@ function Scene(props: SceneProps) {
   } = props;
   const offset: Vector3 = new Vector3(3.5, 0, 0);
   const texture_globe = useLoader(TextureLoader, "./src/assets/globe.jpg");
-  const { renderer, update, reset } = usePathtracer();
+  const { update } = usePathtracer();
 
   useEffect(() => {
     if (path_tracing) {

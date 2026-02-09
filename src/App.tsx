@@ -169,6 +169,8 @@ function Scene(props: SceneProps) {
 function App() {
   const glRef = useRef<WebGLRenderer>(null);
 
+  const urlParams = new URLSearchParams(window.location.search);
+
   const {
     splitting_num,
     jsj_tori_opacity,
@@ -181,70 +183,122 @@ function App() {
     path_tracing,
   } = useControls({
     splitting_num: {
-      value: 4,
+      value: urlParams.get("splitting_num")
+        ? Number(urlParams.get("splitting_num"))
+        : 4,
       min: 1,
       max: 20,
       step: 1,
       hint: "Number of tori in the toroidal splitting",
     },
     jsj_tori_opacity: {
-      value: 0.5,
+      value: urlParams.get("jsj_tori_opacity")
+        ? Number(urlParams.get("jsj_tori_opacity"))
+        : 0.5,
       min: 0,
       max: 1,
       step: 0.01,
       hint: "Opacity of the tori in the toroidal splitting",
     },
     jsj_tori_logitude: {
-      value: 0.5,
+      value: urlParams.get("jsj_tori_logitude")
+        ? Number(urlParams.get("jsj_tori_logitude"))
+        : 0.5,
       min: 0,
       max: 1,
       step: 0.01,
       hint: "Opacity of the longitude lines in the toroidal splitting",
     },
     jsj_tori_meridian: {
-      value: 0.5,
+      value: urlParams.get("jsj_tori_meridian")
+        ? Number(urlParams.get("jsj_tori_meridian"))
+        : 0.5,
       min: 0,
       max: 1,
       step: 0.01,
       hint: "Opacity of the meridian lines in the toroidal splitting",
     },
     jsj_components_opacity: {
-      value: 0.5,
+      value: urlParams.get("jsj_components_opacity")
+        ? Number(urlParams.get("jsj_components_opacity"))
+        : 0.5,
       min: 0,
       max: 1,
       step: 0.01,
       hint: "Opacity of the JSJ components in the toroidal splitting",
     },
     jsj_tori_meridian_compressing_disk: {
-      value: 0.5,
+      value: urlParams.get("jsj_tori_meridian_compressing_disk")
+        ? Number(urlParams.get("jsj_tori_meridian_compressing_disk"))
+        : 0.5,
       min: 0,
       max: 1,
       step: 0.01,
       hint: "Opacity of the compressing disks for the meridian lines in the toroidal splitting",
     },
     jsj_tori_logitude_compressing_disk: {
-      value: 0.5,
+      value: urlParams.get("jsj_tori_logitude_compressing_disk")
+        ? Number(urlParams.get("jsj_tori_logitude_compressing_disk"))
+        : 0.5,
       min: 0,
       max: 1,
       step: 0.01,
       hint: "Opacity of the compressing disks for the longitude lines in the toroidal splitting",
     },
     jsj_obstruction_opacity: {
-      value: 0.5,
+      value: urlParams.get("jsj_obstruction_opacity")
+        ? Number(urlParams.get("jsj_obstruction_opacity"))
+        : 0.5,
       min: 0,
       max: 1,
       step: 0.01,
       hint: "Opacity of the obstructions in the toroidal splitting",
     },
     path_tracing: {
-      value: false,
+      value: urlParams.get("path_tracing")
+        ? urlParams.get("path_tracing") === "true"
+        : false,
       hint: "Whether to enable path tracing or not. Enabling this will significantly increase the rendering time, but will produce more accurate and visually appealing results.",
     },
   });
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams();
+    urlParams.set("splitting_num", splitting_num.toString());
+    urlParams.set("jsj_tori_opacity", jsj_tori_opacity.toString());
+    urlParams.set("jsj_components_opacity", jsj_components_opacity.toString());
+    urlParams.set("jsj_tori_logitude", jsj_tori_logitude.toString());
+    urlParams.set("jsj_tori_meridian", jsj_tori_meridian.toString());
+    urlParams.set(
+      "jsj_tori_logitude_compressing_disk",
+      jsj_tori_logitude_compressing_disk.toString(),
+    );
+    urlParams.set(
+      "jsj_tori_meridian_compressing_disk",
+      jsj_tori_meridian_compressing_disk.toString(),
+    );
+    urlParams.set("jsj_obstruction_opacity", jsj_obstruction_opacity.toString());
+    urlParams.set("path_tracing", path_tracing.toString());
+    window.history.pushState(
+      {},
+      "",
+      `${window.location.pathname}?${urlParams.toString()}`,
+    );
+  }, [
+    splitting_num,
+    jsj_tori_opacity,
+    jsj_components_opacity,
+    jsj_tori_logitude,
+    jsj_tori_meridian,
+    jsj_tori_logitude_compressing_disk,
+    jsj_tori_meridian_compressing_disk,
+    jsj_obstruction_opacity,
+    path_tracing,
+  ]);
+
   return (
     <>
-      <Leva />
+      <Leva hidden={urlParams.get("menu") === "false"} />
       <Canvas
         camera={{ position: [0, 5, 9], fov: 50 }}
         gl={{

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { OrbitControls } from "@react-three/drei";
 import "./App.css";
 import { Canvas } from "@react-three/fiber";
@@ -8,7 +8,162 @@ import { Color, TextureLoader, Vector3, WebGLRenderer } from "three";
 import { useLoader } from "@react-three/fiber";
 import { Leva, useControls } from "leva";
 import toast, { Toaster } from "react-hot-toast";
-import { Pathtracer } from "@react-three/gpu-pathtracer";
+import { Pathtracer, usePathtracer } from "@react-three/gpu-pathtracer";
+
+interface SceneProps {
+  splitting_num: number;
+  jsj_tori_opacity: number;
+  jsj_components_opacity: number;
+  jsj_obstruction_opacity: number;
+  jsj_tori_logitude_opacity: number;
+  jsj_tori_meridian_opacity: number;
+  jsj_tori_logitude_compressing_disk_opacity: number;
+  jsj_tori_meridian_compressing_disk_opacity: number;
+  path_tracing: boolean;
+}
+
+function Scene(props: SceneProps) {
+  const {
+    splitting_num,
+    jsj_tori_opacity,
+    jsj_components_opacity,
+    jsj_tori_logitude_opacity,
+    jsj_tori_meridian_opacity,
+    jsj_tori_logitude_compressing_disk_opacity,
+    jsj_obstruction_opacity,
+    jsj_tori_meridian_compressing_disk_opacity,
+    path_tracing,
+  } = props;
+  const offset: Vector3 = new Vector3(3.5, 0, 0);
+  const texture_globe = useLoader(TextureLoader, "./src/assets/globe.jpg");
+  const { renderer, update, reset } = usePathtracer();
+
+  useEffect(() => {
+    if (path_tracing) {
+      update();
+    }
+  }, [props]);
+
+  return (
+    <group>
+      {[...range(0, splitting_num)].map((i) => (
+        <group
+          position={offset.clone().multiplyScalar(i - (splitting_num - 1) / 2)}
+        >
+          <mesh
+            key={`jsj_torus_${i}`}
+            rotation={[Math.PI / 2, 0, 0]}
+            renderOrder={1}
+          >
+            <Torus R={6 / 5} r={1 / 3} />
+            <meshPhongMaterial
+              map={texture_globe}
+              opacity={jsj_tori_opacity}
+              transparent={true}
+              depthWrite={false}
+            />
+          </mesh>
+          <mesh
+            key={`jsj_torus_logitude_${i}`}
+            rotation={[Math.PI / 2, 0, 0]}
+            renderOrder={-1}
+          >
+            <Torus R={8 / 5} r={0.075} />
+            <meshPhongMaterial
+              color={[1, 0, 0]}
+              opacity={jsj_tori_logitude_opacity}
+              transparent={true}
+              depthWrite={false}
+            />
+          </mesh>
+          <mesh
+            key={`jsj_torus_logitude_compressing_disk_${i}`}
+            rotation={[Math.PI / 2, 0, 0]}
+            renderOrder={-1}
+          >
+            <circleGeometry args={[8 / 5 - 0.075, 64]} />
+            <meshPhongMaterial
+              color={[0, 1, 1]}
+              opacity={jsj_tori_logitude_compressing_disk_opacity}
+              transparent={true}
+              side={2}
+              depthWrite={false}
+            />
+          </mesh>
+          <mesh
+            key={`jsj_torus_meridian_${i}`}
+            position={new Vector3(0, 0, 6 / 5)}
+            rotation={[0, Math.PI / 2, 0]}
+            renderOrder={-1}
+          >
+            <Torus R={2 / 5} r={0.075} />
+            <meshPhongMaterial
+              color={[0, 0, 1]}
+              opacity={jsj_tori_meridian_opacity}
+              transparent={true}
+              depthWrite={false}
+            />
+          </mesh>
+          <mesh
+            key={`jsj_torus_meridian_compressing_disk_${i}`}
+            position={new Vector3(0, 0, 6 / 5)}
+            rotation={[0, Math.PI / 2, 0]}
+            renderOrder={-1}
+          >
+            <circleGeometry args={[2 / 5 - 0.075, 64]} />
+            <meshPhongMaterial
+              color={[1, 1, 0]}
+              opacity={jsj_tori_meridian_compressing_disk_opacity}
+              transparent={true}
+              side={2}
+              depthWrite={false}
+            />
+          </mesh>
+          <mesh
+            key={`jsj_component_${i}`}
+            rotation={[Math.PI / 2, 0, 0]}
+            renderOrder={0}
+          >
+            <Torus R={6 / 5} r={1 / 4} />
+            <meshPhongMaterial
+              color={new Color().setHSL(i / splitting_num, 1, 0.5)}
+              opacity={jsj_components_opacity}
+              transparent={true}
+              depthWrite={false}
+            />
+          </mesh>
+          <mesh
+            key={`jsj_obsturction_longitude${i}`}
+            position={new Vector3(0, 0, 6 / 5)}
+            rotation={[0, Math.PI / 2, 0]}
+            renderOrder={0}
+          >
+            <Torus R={4 / 5} r={0.15} />
+            <meshPhongMaterial
+              color={new Color().setHSL(0, 0, 0.5)}
+              opacity={jsj_obstruction_opacity}
+              transparent={true}
+              depthWrite={false}
+            />
+          </mesh>
+          <mesh
+            key={`jsj_obsturction_meridian${i}`}
+            rotation={[Math.PI / 2, 0, 0]}
+            renderOrder={0}
+          >
+            <Torus R={6 / 5} r={0.15} />
+            <meshPhongMaterial
+              color={new Color().setHSL(0, 0, 0.5)}
+              opacity={jsj_obstruction_opacity}
+              transparent={true}
+              depthWrite={false}
+            />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
 
 function App() {
   const glRef = useRef<WebGLRenderer>(null);
@@ -85,104 +240,6 @@ function App() {
       hint: "Whether to enable path tracing or not. Enabling this will significantly increase the rendering time, but will produce more accurate and visually appealing results.",
     },
   });
-  const offset: Vector3 = new Vector3(3.5, 0, 0);
-
-  const texture_globe = useLoader(TextureLoader, "./src/assets/globe.jpg");
-
-  const jsj_tori = (
-    <group>
-      {[...range(0, splitting_num)].map((i) => (
-        <group
-          position={offset.clone().multiplyScalar(i - (splitting_num - 1) / 2)}
-        >
-          <mesh key={`jsj_torus_${i}`} rotation={[Math.PI / 2, 0, 0]}>
-            <Torus R={6 / 5} r={1 / 3} />
-            <meshPhongMaterial
-              map={texture_globe}
-              opacity={jsj_tori_opacity}
-              transparent={true}
-            />
-          </mesh>
-          <mesh key={`jsj_torus_logitude_${i}`} rotation={[Math.PI / 2, 0, 0]}>
-            <Torus R={8 / 5} r={0.075} />
-            <meshPhongMaterial
-              color={[1, 0, 0]}
-              opacity={jsj_tori_logitude}
-              transparent={true}
-            />
-          </mesh>
-          <mesh
-            key={`jsj_torus_logitude_compressing_disk_${i}`}
-            rotation={[Math.PI / 2, 0, 0]}
-          >
-            <circleGeometry args={[8 / 5 - 0.075, 64]} />
-            <meshPhongMaterial
-              color={[0, 1, 1]}
-              opacity={jsj_tori_logitude_compressing_disk}
-              transparent={true}
-              side={2}
-            />
-          </mesh>
-          <mesh
-            key={`jsj_torus_meridian_${i}`}
-            position={new Vector3(0, 0, 6 / 5)}
-            rotation={[0, Math.PI / 2, 0]}
-          >
-            <Torus R={2 / 5} r={0.075} />
-            <meshPhongMaterial
-              color={[0, 0, 1]}
-              opacity={jsj_tori_meridian}
-              transparent={true}
-            />
-          </mesh>
-          <mesh
-            key={`jsj_torus_meridian_compressing_disk_${i}`}
-            position={new Vector3(0, 0, 6 / 5)}
-            rotation={[0, Math.PI / 2, 0]}
-          >
-            <circleGeometry args={[2 / 5 - 0.075, 64]} />
-            <meshPhongMaterial
-              color={[1, 1, 0]}
-              opacity={jsj_tori_meridian_compressing_disk}
-              transparent={true}
-              side={2}
-            />
-          </mesh>
-          <mesh key={`jsj_component_${i}`} rotation={[Math.PI / 2, 0, 0]}>
-            <Torus R={6 / 5} r={1 / 4} />
-            <meshPhongMaterial
-              color={new Color().setHSL(i / splitting_num, 1, 0.5)}
-              opacity={jsj_components_opacity}
-              transparent={true}
-            />
-          </mesh>
-          <mesh
-            key={`jsj_obsturction_longitude${i}`}
-            position={new Vector3(0, 0, 6 / 5)}
-            rotation={[0, Math.PI / 2, 0]}
-          >
-            <Torus R={4 / 5} r={0.15} />
-            <meshPhongMaterial
-              color={new Color().setHSL(0, 0, 0.5)}
-              opacity={jsj_obstruction_opacity}
-              transparent={true}
-            />
-          </mesh>
-          <mesh
-            key={`jsj_obsturction_meridian${i}`}
-            rotation={[Math.PI / 2, 0, 0]}
-          >
-            <Torus R={6 / 5} r={0.15} />
-            <meshPhongMaterial
-              color={new Color().setHSL(0, 0, 0.5)}
-              opacity={jsj_obstruction_opacity}
-              transparent={true}
-            />
-          </mesh>
-        </group>
-      ))}
-    </group>
-  );
 
   return (
     <>
@@ -219,7 +276,21 @@ function App() {
           <OrbitControls makeDefault enableDamping={false} />
           <ambientLight intensity={0.2} />
           <directionalLight position={[8, 8, 2]} intensity={1} castShadow />
-          {jsj_tori}
+          <Scene
+            splitting_num={splitting_num}
+            jsj_tori_opacity={jsj_tori_opacity}
+            jsj_components_opacity={jsj_components_opacity}
+            jsj_tori_logitude_opacity={jsj_tori_logitude}
+            jsj_tori_meridian_opacity={jsj_tori_meridian}
+            jsj_obstruction_opacity={jsj_obstruction_opacity}
+            jsj_tori_logitude_compressing_disk_opacity={
+              jsj_tori_logitude_compressing_disk
+            }
+            jsj_tori_meridian_compressing_disk_opacity={
+              jsj_tori_meridian_compressing_disk
+            }
+            path_tracing
+          />
         </Pathtracer>
       </Canvas>
       <Toaster position="top-right" />

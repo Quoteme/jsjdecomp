@@ -9,6 +9,7 @@ import { useLoader } from "@react-three/fiber";
 import { Leva, useControls } from "leva";
 import toast, { Toaster } from "react-hot-toast";
 import { Pathtracer, usePathtracer } from "@react-three/gpu-pathtracer";
+import globeImage from "./assets/globe.jpg";
 
 interface SceneProps {
   splitting_num: number;
@@ -35,7 +36,7 @@ function Scene(props: SceneProps) {
     path_tracing,
   } = props;
   const offset: Vector3 = new Vector3(3.5, 0, 0);
-  const texture_globe = useLoader(TextureLoader, "./src/assets/globe.jpg");
+  const texture_globe = useLoader(TextureLoader, globeImage);
   const { update } = usePathtracer();
 
   useEffect(() => {
